@@ -52,13 +52,17 @@ def single_byte_xor_cipher(string1, key_byte):
 
 def score_english_text(string1):
     score = 0
-    most_freq = 'ETAOIN SHRDLU'
+    most_freq_str = 'ETAOIN SHRDLU'
+    most_freq = {}
+    bonus = len(most_freq_str) + 1
+    for char in most_freq_str:
+        most_freq[char] = bonus
+        bonus -= 1
     for char in string1.upper():
-        index = most_freq.find(char)
-        if index < 0:
+        if char not in most_freq:
             score -= 1
         else:
-            score += len(most_freq) - index
+            score += most_freq[char]
     return score
 
 class TestSet1(unittest.TestCase):
@@ -99,6 +103,32 @@ class TestSet1(unittest.TestCase):
         output = single_byte_xor_cipher(string1, best_key)
         output = pack_bytes(output)
         self.assertEqual(output, "Cooking MC's like a pound of bacon")
+
+    def test_find_encrypted_string_in_file(self):
+        lines = list()
+        with open('set1_challenge4.txt', 'r') as data:
+            lines = map(lambda x: x.strip(), data.readlines())
+        best_scores = {}
+        i = 0
+        for line in lines:
+            scores = {}
+            for key in xrange(0, 256):
+                decoded_line = hex_decode(line)
+                output = single_byte_xor_cipher(decoded_line, key)
+                output = pack_bytes(output)
+                score = score_english_text(output)
+                scores[score] = key
+            best_score = max(scores)
+            best_key = scores[best_score]
+            best_scores[best_score] = (i, best_key)
+            i += 1
+        most_smartest_score = max(best_scores)
+        line_num, best_key = best_scores[most_smartest_score]
+        decoded_line = hex_decode(lines[line_num])
+        output = single_byte_xor_cipher(decoded_line, best_key)
+        output = pack_bytes(output)
+        self.assertEqual(output, 'Now that the party is jumping\n')
+        self.assertEqual(line_num, 170)
 
 if __name__ == '__main__':
     unittest.main()
