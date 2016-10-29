@@ -50,6 +50,21 @@ def single_byte_xor_cipher(string1, key_byte):
     output = fixed_xor(string1, key)
     return output
 
+def create_repeating_key(string1, key):
+    repeats = int(len(string1) / len(key))
+    remainder = len(string1) % len(key)
+    full_key = key * repeats
+    if remainder != 0:
+        full_key += key[:remainder]
+    full_key = hex_encode(full_key)
+    full_key = hex_decode(full_key)
+    return full_key
+
+def repeating_key_xor_cipher(string1, key):
+    full_key = create_repeating_key(string1, key)
+    output = fixed_xor(string1, full_key)
+    return output
+
 def score_english_text(string1):
     score = 0
     most_freq_str = 'ETAOIN SHRDLU'
@@ -129,6 +144,21 @@ class TestSet1(unittest.TestCase):
         output = pack_bytes(output)
         self.assertEqual(output, 'Now that the party is jumping\n')
         self.assertEqual(line_num, 170)
+
+    def test_repeating_key_xor(self):
+        input1 = """Burning 'em, if you ain't quick and nimble
+I go crazy when I hear a cymbal"""
+        input1 = hex_encode(input1)
+        input1 = hex_decode(input1)
+        key = "ICE"
+        output = repeating_key_xor_cipher(input1, key)
+        output = pack_bytes(output)
+        output = hex_encode(output)
+        expected_output = "0b3637272a2b2e63622c2e69692a23693a2a3c63242"
+        expected_output += "02d623d63343c2a26226324272765272"
+        expected_output += "a282b2f20430a652e2c652a3124333a653e2b20276"
+        expected_output += "30c692b20283165286326302e27282f"
+        self.assertEqual(output, expected_output)
 
 if __name__ == '__main__':
     unittest.main()
