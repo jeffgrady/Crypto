@@ -80,6 +80,26 @@ def score_english_text(string1):
             score += most_freq[char]
     return score
 
+def hamming_distance(input1, input2):
+    """Return the number of bits that differ between two strings."""
+    # the strings should be the same length, but just in case...
+    length = min(len(input1), len(input2))
+    input1 = input1[:length]
+    input2 = input2[:length]
+    input1 = hex_decode(hex_encode(input1))
+    input2 = hex_decode(hex_encode(input2))
+    # the general strategy here is to xor the two strings together
+    # and then just count the number of 1s in the output (i.e., where the
+    # two strings differed).
+    output = fixed_xor(input1, input2)
+    distance = 0
+    for byte in output:
+        for i in range(8):
+            bit_mask = 1 << i
+            if (bit_mask & byte) == bit_mask:
+                distance += 1
+    return distance
+
 class TestSet1(unittest.TestCase):
 
     def test_hex_to_base64(self):
@@ -159,6 +179,12 @@ I go crazy when I hear a cymbal"""
         expected_output += "a282b2f20430a652e2c652a3124333a653e2b20276"
         expected_output += "30c692b20283165286326302e27282f"
         self.assertEqual(output, expected_output)
+
+    def test_hamming_distance(self):
+        input1 = "this is a test"
+        input2 = "wokka wokka!!!"
+        output = hamming_distance(input1, input2)
+        self.assertEqual(output, 37)
 
 if __name__ == '__main__':
     unittest.main()
