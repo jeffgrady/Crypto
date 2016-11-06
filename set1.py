@@ -82,10 +82,8 @@ def score_english_text(string1):
 
 def hamming_distance(input1, input2):
     """Return the number of bits that differ between two strings."""
-    # the strings should be the same length, but just in case...
-    length = min(len(input1), len(input2))
-    input1 = input1[:length]
-    input2 = input2[:length]
+    if len(input1) != len(input2):
+        raise ValueError('Length of input1 and input2 are not equal.')
     input1 = hex_decode(hex_encode(input1))
     input2 = hex_decode(hex_encode(input2))
     # the general strategy here is to xor the two strings together
