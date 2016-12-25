@@ -98,6 +98,24 @@ def hamming_distance(input1, input2):
                 distance += 1
     return distance
 
+def find_distance_for_range(start, stop, data):
+    output = {}
+    for i in xrange(start, stop+1):
+        input1 = data[:i]
+        input2 = data[i:i*2]
+        distance1 = hamming_distance(input1, input2)
+        input1 = data[i*2:i*3]
+        input2 = data[i*3:i*4]
+        distance2 = hamming_distance(input1, input2)
+        output[i] = (i, float((distance1 + distance2)/2) / i)
+    return output
+
+def transpose_blocks(keysize, data):
+    blocks = tuple()
+    for i in xrange(keysize):
+        blocks += (data[i::keysize],)
+    return blocks
+
 class TestSet1(unittest.TestCase):
 
     def test_hex_to_base64(self):
@@ -183,6 +201,52 @@ I go crazy when I hear a cymbal"""
         input2 = "wokka wokka!!!"
         output = hamming_distance(input1, input2)
         self.assertEqual(output, 37)
+
+    def test_solve_challenge_6(self):
+        data = None
+        with open('set1_challenge6.txt', 'r') as data_file:
+            data = base64.b64decode(data_file.read())
+        start, stop = 2, 40
+        output = find_distance_for_range(start, stop, data)
+        def cmp(x1, x2):
+            if x1[1] < x2[1]:
+                return -1
+            elif x1[1] == x2[1]:
+                return 0
+            return 1
+        top = output.values()
+        top.sort(cmp)
+        top = top[:10]
+        possible_solutions = {}
+        enc_data = hex_encode(data)
+        enc_data = hex_decode(enc_data)
+        for candidate in top:
+            keysize = candidate[0]
+            transpose = transpose_blocks(keysize, data)
+            self.assertEqual(len(transpose), keysize)
+            final_key = []
+            for block in transpose:
+                scores = {}
+                input1 = hex_encode(block)
+                input1 = hex_decode(input1)
+                for key in xrange(0, 256):
+                    output = single_byte_xor_cipher(input1, key)
+                    output = pack_bytes(output)
+                    score = score_english_text(output)
+                    scores[score] = key
+                best_score = max(scores)
+                best_key = scores[best_score]
+                final_key.append(best_key)
+            key = ''.join(map(chr, final_key))
+            output = repeating_key_xor_cipher(enc_data, key)
+            output = pack_bytes(output)
+            score = score_english_text(output)
+            possible_solutions[score] = (key, output)
+        best_solution = max(possible_solutions)
+        self.assertEqual(possible_solutions[best_solution][0],
+                         'Terminator X: Bring the noise')
+        self.assertEqual(possible_solutions[best_solution][1][:33],
+                         "I'm back and I'm ringin' the bell")
 
 if __name__ == '__main__':
     unittest.main()
